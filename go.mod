@@ -3,14 +3,14 @@ module github.com/OnsagerHe/geoip-detector
 go 1.22.3
 
 require (
-	github.com/OnsagerHe/geoip-detector v0.0.0-20240713200716-d738d2a89cbf
-	github.com/miekg/dns v1.1.59
-	golang.org/x/crypto v0.21.0
+	github.com/miekg/dns v1.1.61
+	golang.org/x/crypto v0.25.0
 )
 
 require (
-	golang.org/x/mod v0.16.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/tools v0.19.0 // indirect
+	golang.org/x/mod v0.19.0 // indirect
+	golang.org/x/net v0.27.0 // indirect
+	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sys v0.22.0 // indirect
+	golang.org/x/tools v0.23.0 // indirect
 )
