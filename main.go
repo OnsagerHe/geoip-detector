@@ -104,10 +104,11 @@ func connectToVPN(vpnProvider *vpn.Mullvad) error {
 	}
 	time.Sleep(3 * time.Second)
 	fmt.Print("VPN connection")
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 3; i++ {
 		fmt.Print(".")
 		time.Sleep(1 * time.Second)
 	}
+	fmt.Println("")
 	return nil
 }
 

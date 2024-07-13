@@ -1,3 +1,5 @@
+github.com/OnsagerHe/geoip-detector v0.0.0-20240713200716-d738d2a89cbf h1:eiaLaAPaGPQTFGZ918L8B+5tbCjKhY6jLfWU/Zi7fdQ=
+github.com/OnsagerHe/geoip-detector v0.0.0-20240713200716-d738d2a89cbf/go.mod h1:BHJXW5RD9tF+BB7VI+7h1fmZZH+NQz04fTOjA4QcVfQ=
 github.com/miekg/dns v1.1.59 h1:C9EXc/UToRwKLhK5wKU/I4QVsBUc8kE6MkHBkeypWZs=
 github.com/miekg/dns v1.1.59/go.mod h1:nZpewl5p6IvctfgrckopVx2OlSEHPRO/U4SYkRklrEk=
 golang.org/x/crypto v0.21.0 h1:X31++rzVUdKhX5sWmSOFZxx8UW/ldWx55cbf08iNAMA=
