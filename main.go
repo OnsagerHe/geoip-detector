@@ -1,22 +1,24 @@
 package main
 
 import (
-	dnsutils "awesomeProject4/pkg/dns"
-	httputils "awesomeProject4/pkg/http"
-	"awesomeProject4/pkg/utils"
-	"awesomeProject4/pkg/vpn"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"time"
+
+	dnsutils "github.com/OnsagerHe/geoip-detector/pkg/dns"
+	httputils "github.com/OnsagerHe/geoip-detector/pkg/http"
+	"github.com/OnsagerHe/geoip-detector/pkg/utils"
+	"github.com/OnsagerHe/geoip-detector/pkg/vpn"
 )
 
 var endpoint *string
 var loop *uint
 
 func init() {
-	endpoint = flag.String("endpoint", "http://onsager.net", "a string")
-	loop = flag.Uint("loop", 3, "a integer")
+	endpoint = flag.String("endpoint", "http://onsager.net", "endpoint to test")
+	loop = flag.Uint("loop", 3, "number of localizations you wish to use")
 	flag.Parse()
 }
 
@@ -101,7 +103,11 @@ func connectToVPN(vpnProvider *vpn.Mullvad) error {
 		return errors.New("cannot connect to Mullvad VPN")
 	}
 	time.Sleep(3 * time.Second)
-	log.Println("Sleep during 3 sec ...")
+	fmt.Print("VPN connection")
+	for i := 0; i < 10; i++ {
+		fmt.Print(".")
+		time.Sleep(1 * time.Second)
+	}
 	return nil
 }
 

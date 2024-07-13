@@ -3,7 +3,6 @@ module awesomeProject4
 go 1.22.3
 
 require (
-	github.com/joho/godotenv v1.5.1
 	github.com/miekg/dns v1.1.59
 	golang.org/x/crypto v0.21.0
 )

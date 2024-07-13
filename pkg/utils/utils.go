@@ -2,11 +2,12 @@ package utils
 
 import (
 	"bytes"
-	"golang.org/x/crypto/sha3"
-	"hash"
+	"fmt"
 	"log"
 	"net"
 	"strings"
+
+	"golang.org/x/crypto/sha3"
 )
 
 type Nameserver struct {
@@ -53,8 +54,7 @@ func RemoveAnalyzeDuplicates(analyzes []Analyze) []Analyze {
 }
 
 func HashByte(body []byte) []byte {
-	var hasher hash.Hash
-	hasher = sha3.New256()
+	hasher := sha3.New256()
 	hasher.Write(body)
 	hashSum := hasher.Sum(nil)
 
@@ -69,7 +69,7 @@ func CompareHash(analyzes []Analyze) {
 	for i := range analyzes {
 		log.Printf("\tip %s: %x\n", analyzes[i].IpDest, analyzes[i].Hash)
 		if !bytes.Equal(analyzes[i].Hash, firstHash) {
-			log.Printf("%s has a different hash: %x\n", analyzes[i].IpDest, analyzes[i].Hash)
+			fmt.Printf("%s has a different hash: %x\n", analyzes[i].IpDest, analyzes[i].Hash)
 
 		}
 	}

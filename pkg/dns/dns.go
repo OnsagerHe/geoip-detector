@@ -1,12 +1,13 @@
 package dns
 
 import (
-	"awesomeProject4/pkg/utils"
 	"fmt"
-	"github.com/miekg/dns"
 	"log"
 	"net"
 	"strings"
+
+	"github.com/OnsagerHe/geoip-detector/pkg/utils"
+	"github.com/miekg/dns"
 )
 
 func InitNameserversInformation(resource *utils.EndpointMetadata) error {

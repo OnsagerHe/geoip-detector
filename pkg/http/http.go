@@ -1,7 +1,6 @@
 package http
 
 import (
-	"awesomeProject4/pkg/utils"
 	"context"
 	"errors"
 	"io"
@@ -11,6 +10,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/OnsagerHe/geoip-detector/pkg/utils"
 )
 
 func getDomainFromURL(resource *utils.EndpointMetadata) error {
