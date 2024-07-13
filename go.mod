@@ -1,4 +1,4 @@
-module awesomeProject4
+module github.com/OnsagerHe/geoip-detector
 
 go 1.22.3
 
