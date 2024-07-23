@@ -7,4 +7,5 @@ type IProviderVPN interface {
 	SetCustomDNSResolver(ip string) error
 	SetDefaultDNSResolver() error
 	CheckVPNStatus(expectedCountryCode string) ([]string, error)
+	ExtractIPAddresses(status string) (ipv4, ipv6 string)
 }

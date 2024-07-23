@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/OnsagerHe/geoip-detector/pkg/utils"
-	"github.com/miekg/dns"
 )
 
 func InitNameserversInformation(resource *utils.EndpointMetadata) error {
@@ -16,7 +15,7 @@ func InitNameserversInformation(resource *utils.EndpointMetadata) error {
 		log.Printf("Error: %v\n", err)
 		return err
 	}
-	// Get nameserver from domain
+
 	err = getNs(resource)
 	if err != nil {
 		log.Printf("Error: %v\n", err)
@@ -105,17 +104,6 @@ func ProcessDNSRecords(resource *utils.EndpointMetadata, countryCode string, ips
 		analyze.Nameserver = utils.Nameserver{Host: ns.Host, IPs: []net.IP{ip}}
 		*analyzes = append(*analyzes, analyze)
 	}
-}
-
-func InitDNSClient() *dns.Client {
-	return new(dns.Client)
-}
-
-func InitDNSRequest(domain string, typeRecords uint16) *dns.Msg {
-	dnsMessage := new(dns.Msg)
-	dnsMessage.SetQuestion(dns.Fqdn(domain), typeRecords)
-	dnsMessage.RecursionDesired = true
-	return dnsMessage
 }
 
 func checkCNAME(resource *utils.EndpointMetadata) error {

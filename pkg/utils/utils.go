@@ -23,6 +23,7 @@ type EndpointMetadata struct {
 	Nameservers []Nameserver
 	Cname       bool
 	CnameHost   string
+	Online      bool
 }
 
 type Analyze struct {
@@ -32,6 +33,7 @@ type Analyze struct {
 	Hash        []byte
 	Online      bool
 	Nameserver  Nameserver
+	Filename    string
 }
 
 // Key Method to convert the struct to a comparable string key
@@ -62,10 +64,8 @@ func HashByte(body []byte) []byte {
 }
 
 func CompareHash(analyzes []Analyze) {
-	// Get the first hash value
 	firstHash := analyzes[0].Hash
 
-	// Iterate over the rest of the analyses array
 	for i := range analyzes {
 		log.Printf("\tip %s: %x\n", analyzes[i].IpDest, analyzes[i].Hash)
 		if !bytes.Equal(analyzes[i].Hash, firstHash) {

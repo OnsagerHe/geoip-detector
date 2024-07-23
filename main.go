@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/OnsagerHe/geoip-detector/pkg"
 	"log"
 	"time"
 
@@ -96,6 +97,7 @@ func run() {
 
 	processRelaysAndDNS(&vpnProvider, &resource, &analyzes)
 	utils.CompareHash(analyzes)
+	pkg.SortResult(analyzes)
 }
 
 func connectToVPN(vpnProvider *vpn.Mullvad) error {

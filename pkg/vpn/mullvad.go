@@ -46,6 +46,27 @@ func parseOutput(output string) map[string][]string {
 	return relays
 }
 
+func (m Mullvad) ExtractIPAddresses(status string) (ipv4, ipv6 string) {
+	ipv4Pattern := `IPv4:\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)`
+	ipv6Pattern := `IPv6:\s*([a-fA-F0-9:]+)`
+
+	reIPv4 := regexp.MustCompile(ipv4Pattern)
+	reIPv6 := regexp.MustCompile(ipv6Pattern)
+
+	ipv4Match := reIPv4.FindStringSubmatch(status)
+	ipv6Match := reIPv6.FindStringSubmatch(status)
+
+	if len(ipv4Match) > 1 {
+		ipv4 = ipv4Match[1]
+	}
+
+	if len(ipv6Match) > 1 {
+		ipv6 = ipv6Match[1]
+	}
+
+	return
+}
+
 func (m Mullvad) ListVPN() map[string][]string {
 	cmd := exec.Command("mullvad", "relay", "list")
 	var out bytes.Buffer
@@ -87,6 +108,7 @@ func (m Mullvad) SetLocationVPN(countryCode string) ([]string, error) {
 	}
 
 	ips, err := m.CheckVPNStatus(countryCode)
+	log.Println("ips", ips)
 	if err != nil {
 		log.Println("Error:", err)
 		return nil, err
@@ -178,7 +200,7 @@ func printRelayIdentifierIfContains(input, countryCode string) (bool, []string) 
 
 		start := strings.Index(input, "Connected to ") + len("Connected to ")
 		end := strings.Index(input[start:], " ")
-		if end != -1 {
+		if end != -1 && ipAddresses != nil {
 			log.Println(input[start : start+end])
 			return true, ipAddresses
 		} else {

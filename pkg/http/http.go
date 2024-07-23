@@ -2,12 +2,16 @@ package http
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -37,14 +41,12 @@ func customDialer(domain, ip, port string) func(ctx context.Context, network, ad
 }
 
 func InitHTTPInformation(resource *utils.EndpointMetadata) error {
-	// Check endpoint
 	err := parseHTTP(resource)
 	if err != nil {
 		log.Printf("Error: %v\n", err)
 		return err
 	}
 
-	// Parse domain from URL
 	err = getDomainFromURL(resource)
 	if err != nil {
 		log.Printf("Error: %v\n", err)
@@ -61,21 +63,18 @@ func RequestEndpoints(resource *utils.EndpointMetadata, analyzes *[]utils.Analyz
 }
 
 func requestEndpoint(resource *utils.EndpointMetadata, analyze *utils.Analyze) {
-	// Create a custom HTTP client
 	client := &http.Client{
 		Transport: &http.Transport{
 			DialContext: customDialer(resource.Host, analyze.IpDest, resource.Port),
 		},
 	}
 
-	// Create a new request
 	req, err := http.NewRequest("GET", resource.Endpoint, nil)
 	if err != nil {
 		log.Printf("Error creating request: %v\n", err)
 		return
 	}
 
-	// Perform the request
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Error performing request: %v\n", err)
@@ -91,9 +90,35 @@ func requestEndpoint(resource *utils.EndpointMetadata, analyze *utils.Analyze) {
 		}
 
 		analyze.Hash = utils.HashByte(body)
-	}
+		analyze.Online = true
 
-	return
+		hashStr := hex.EncodeToString(analyze.Hash)
+
+		fileName := fmt.Sprintf("%s_%s_%s.html", resource.Host, analyze.CountryCode, hashStr)
+		filePath := filepath.Join("downloads/"+resource.Host, fileName)
+
+		analyze.Filename = filePath
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			log.Printf("Error creating directory: %v\n", err)
+			return
+		}
+
+		file, err := os.Create(filePath)
+		if err != nil {
+			log.Printf("Error creating file: %v\n", err)
+			return
+		}
+		defer file.Close()
+
+		if _, err := file.Write(body); err != nil {
+			log.Printf("Error writing to file: %v\n", err)
+			return
+		}
+
+		log.Printf("Content saved to: %s\n", filePath)
+	} else {
+		analyze.Online = false
+	}
 }
 
 func parseHTTP(resource *utils.EndpointMetadata) error {
