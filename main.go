@@ -46,9 +46,7 @@ func processRelaysAndDNS(vpnProvider *vpn.Mullvad, resource *utils.EndpointMetad
 		if count >= *loop {
 			break
 		}
-		if count == 0 {
-			countryCode = "al"
-		}
+
 		ips, err := vpnProvider.SetLocationVPN(countryCode)
 		if err != nil {
 			log.Printf("Error setting location VPN: %v\n", err)
