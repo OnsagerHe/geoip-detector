@@ -46,6 +46,9 @@ func processRelaysAndDNS(vpnProvider *vpn.Mullvad, resource *utils.EndpointMetad
 		if count >= *loop {
 			break
 		}
+		if count == 0 {
+			countryCode = "al"
+		}
 		ips, err := vpnProvider.SetLocationVPN(countryCode)
 		if err != nil {
 			log.Printf("Error setting location VPN: %v\n", err)
@@ -75,11 +78,10 @@ func processRelaysAndDNS(vpnProvider *vpn.Mullvad, resource *utils.EndpointMetad
 				log.Println("Error setting default DNS resolver:", err)
 				return
 			}
-
-			*analyzes = utils.RemoveAnalyzeDuplicates(*analyzes)
-			httputils.RequestEndpoints(resource, analyzes)
 		}
 	}
+	*analyzes = utils.RemoveAnalyzeDuplicates(*analyzes)
+	httputils.RequestEndpoints(resource, analyzes)
 }
 
 func run() {
