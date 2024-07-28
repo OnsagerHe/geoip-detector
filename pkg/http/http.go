@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/chromedp/chromedp"
-	"golang.org/x/exp/rand"
 	"io"
 	"log"
 	"net"
@@ -57,14 +56,6 @@ func InitHTTPInformation(resource *utils.EndpointMetadata) error {
 	return nil
 }
 
-// fullScreenshot is a helper function to capture a full-page screenshot.
-func fullScreenshot(urlstr string, quality int, res *[]byte) chromedp.Tasks {
-	return chromedp.Tasks{
-		chromedp.Navigate(urlstr),
-		chromedp.FullScreenshot(res, quality),
-	}
-}
-
 func TakeScreenshot(res *utils.GeoIP) {
 	for i := range res.Analyzes {
 		err := takeScreenshot(&res.Resource, &(res.Analyzes)[i])
@@ -85,23 +76,6 @@ func TakeScreenshotByCountryCode(res *utils.GeoIP, analyzes []*utils.Analyze) {
 	}
 }
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const (
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-)
-
-func RandStringBytesMask(n int) string {
-	b := make([]byte, n)
-	for i := 0; i < n; {
-		if idx := int(rand.Int63() & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
-			i++
-		}
-	}
-	return string(b)
-}
-
 // TakeScreenshot captures a screenshot of the given URL and saves it to the specified folder.
 func takeScreenshot(resource *utils.EndpointMetadata, analyze *utils.Analyze) error {
 	bravePath := "/usr/bin/brave"
@@ -119,18 +93,15 @@ func takeScreenshot(resource *utils.EndpointMetadata, analyze *utils.Analyze) er
 	ctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
-	// Run task list
 	var buf []byte
-	if err := chromedp.Run(ctx, screenshotTasks(resource.Endpoint, &buf)); err != nil {
+	if err := chromedp.Run(ctx, fullScreenshot(resource.Endpoint, &buf)); err != nil {
 		return fmt.Errorf("failed to capture screenshot: %w", err)
 	}
 
-	// Ensure the folder exists
 	if err := os.MkdirAll("downloads", os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create folder: %w", err)
 	}
 
-	//s := RandStringBytesMask(3)
 	fileName := fmt.Sprintf("%s_%s_%x.%s", resource.Host, analyze.CountryCode, analyze.Hash, "png")
 	analyze.Filename = fileName
 	filePath := filepath.Join("downloads", fileName)
@@ -139,6 +110,14 @@ func takeScreenshot(resource *utils.EndpointMetadata, analyze *utils.Analyze) er
 	}
 
 	return nil
+}
+
+// fullScreenshot is a helper function to capture a full-page screenshot.
+func fullScreenshot(urlstr string, res *[]byte) chromedp.Tasks {
+	return chromedp.Tasks{
+		chromedp.Navigate(urlstr),
+		chromedp.FullScreenshot(res, 100),
+	}
 }
 
 // screenshotTasks returns a chromedp.Tasks to capture a screenshot of a webpage.
