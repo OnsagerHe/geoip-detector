@@ -6,7 +6,6 @@ require (
 	github.com/chromedp/chromedp v0.9.5
 	github.com/fatih/color v1.17.0
 	golang.org/x/crypto v0.25.0
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 )
 
 require (
