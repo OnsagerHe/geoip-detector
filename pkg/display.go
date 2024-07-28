@@ -46,6 +46,7 @@ func displayInformation(data []utils.Analyze) {
 		fmt.Printf("Hash: %x\n", entry.Hash)
 		// fmt.Printf("Hour UTC: %s\n", "N/A") // TODO: Maybe add timestamp
 		fmt.Printf("Country Code IP Source: %s\n", entry.CountryCode)
-		fmt.Printf("Filename screenshot: %s\n\n", entry.Filename)
+		fmt.Printf("Filename screenshot: %s\n", entry.Filename)
+		fmt.Printf("Nameserver requested: %s\n\n", entry.Nameserver.IPs)
 	}
 }

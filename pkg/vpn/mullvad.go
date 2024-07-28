@@ -108,7 +108,6 @@ func (m Mullvad) SetLocationVPN(countryCode string) ([]string, error) {
 	}
 
 	ips, err := m.CheckVPNStatus(countryCode)
-	log.Println("ips", ips)
 	if err != nil {
 		log.Println("Error:", err)
 		return nil, err
@@ -204,7 +203,9 @@ func printRelayIdentifierIfContains(input, countryCode string) (bool, []string) 
 			log.Println(input[start : start+end])
 			return true, ipAddresses
 		} else {
+			log.Println(input[start : start+end])
 			log.Println("Relay identifier not found")
+			return true, ipAddresses // FIXME: parse mullvad status debug instead
 		}
 	} else {
 		log.Printf("The input string does not contain the country code: %s\n", countryCode)

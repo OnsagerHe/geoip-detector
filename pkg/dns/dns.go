@@ -88,12 +88,12 @@ func filterIPv6Str(addresses *[]string) {
 	*addresses = filtered
 }
 
-func ProcessDNSRecords(resource *utils.EndpointMetadata, countryCode string, ips []string, ns utils.Nameserver, ip net.IP, analyzes *[]utils.Analyze) {
+func ProcessDNSRecords(res *utils.GeoIP, countryCode string, ips []string, ns utils.Nameserver, ip net.IP) []string {
 	var analyze utils.Analyze
-	host, err := net.LookupHost(resource.CnameHost)
+	host, err := net.LookupHost(res.Resource.CnameHost)
 	if err != nil {
 		log.Println("Error looking up host:", err)
-		return
+		return nil
 	}
 	filterIPv6Str(&host)
 
@@ -102,8 +102,9 @@ func ProcessDNSRecords(resource *utils.EndpointMetadata, countryCode string, ips
 		analyze.CountryCode = countryCode
 		analyze.IpSource = ips
 		analyze.Nameserver = utils.Nameserver{Host: ns.Host, IPs: []net.IP{ip}}
-		*analyzes = append(*analyzes, analyze)
+		res.Analyzes = append(res.Analyzes, analyze)
 	}
+	return host
 }
 
 func checkCNAME(resource *utils.EndpointMetadata) error {

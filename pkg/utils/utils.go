@@ -3,12 +3,19 @@ package utils
 import (
 	"bytes"
 	"fmt"
+	"github.com/OnsagerHe/geoip-detector/pkg/vpn"
 	"log"
 	"net"
 	"strings"
 
 	"golang.org/x/crypto/sha3"
 )
+
+type GeoIP struct {
+	Resource    EndpointMetadata
+	Analyzes    []Analyze
+	VPNProvider vpn.IProviderVPN
+}
 
 type Nameserver struct {
 	Host *net.NS
@@ -39,6 +46,47 @@ type Analyze struct {
 // Key Method to convert the struct to a comparable string key
 func (a Analyze) Key() string {
 	return a.IpDest + ":" + strings.Join(a.IpSource, ",") + ":" + a.CountryCode + ":" + string(a.Hash)
+}
+
+func GetAnalyzesByHosts(analyzes []Analyze, countryCode string, hosts []string) []*Analyze {
+	allKeys := make(map[string]bool)
+	var list []*Analyze
+	hostSet := make(map[string]bool)
+	for _, host := range hosts {
+		hostSet[host] = true
+	}
+
+	for i := range analyzes {
+		item := &analyzes[i]
+		// Filter out items with a different CountryCode or IpDest not in hosts
+		if item.CountryCode != countryCode || !hostSet[item.IpDest] {
+			continue
+		}
+		key := item.Key()
+		if _, exists := allKeys[key]; !exists {
+			allKeys[key] = true
+			list = append(list, item)
+		}
+	}
+	return list
+}
+
+func GetAnalyzesByCountryCode(analyzes []Analyze, countryCode string) []*Analyze {
+	allKeys := make(map[string]bool)
+	var list []*Analyze
+	for i := range analyzes {
+		item := &analyzes[i]
+		// Filter out items with a different CountryCode
+		if item.CountryCode != countryCode {
+			continue
+		}
+		key := item.Key()
+		if _, exists := allKeys[key]; !exists {
+			allKeys[key] = true
+			list = append(list, item)
+		}
+	}
+	return list
 }
 
 // RemoveAnalyzeDuplicates Function to remove duplicates from a slice of Analyze structs

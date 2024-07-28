@@ -23,31 +23,38 @@ func init() {
 	flag.Parse()
 }
 
-func initializeResources() (utils.EndpointMetadata, []utils.Analyze, error) {
-	resource := utils.EndpointMetadata{Endpoint: *endpoint}
-	var analyzes []utils.Analyze
-
-	if err := httputils.InitHTTPInformation(&resource); err != nil {
-		return resource, analyzes, err
+func initializeResources() (*utils.GeoIP, error) {
+	res := utils.GeoIP{
+		Resource:    utils.EndpointMetadata{Endpoint: *endpoint},
+		Analyzes:    nil,
+		VPNProvider: vpn.Mullvad{},
 	}
 
-	if err := dnsutils.InitNameserversInformation(&resource); err != nil {
-		return resource, analyzes, err
+	if err := httputils.InitHTTPInformation(&res.Resource); err != nil {
+		return nil, err
 	}
 
-	return resource, analyzes, nil
+	if err := dnsutils.InitNameserversInformation(&res.Resource); err != nil {
+		return nil, err
+	}
+
+	return &res, nil
 }
 
-func processRelaysAndDNS(vpnProvider *vpn.Mullvad, resource *utils.EndpointMetadata, analyzes *[]utils.Analyze) {
-	relays := vpnProvider.ListVPN()
+func processRelaysAndDNS(res *utils.GeoIP) {
+	relays := res.VPNProvider.ListVPN()
 	count := uint(0)
 
 	for countryCode := range relays {
 		if count >= *loop {
 			break
 		}
+		// TODO: remove debug condition
+		if count == 0 {
+			countryCode = "al"
+		}
 
-		ips, err := vpnProvider.SetLocationVPN(countryCode)
+		ips, err := res.VPNProvider.SetLocationVPN(countryCode)
 		if err != nil {
 			log.Printf("Error setting location VPN: %v\n", err)
 			return
@@ -55,7 +62,7 @@ func processRelaysAndDNS(vpnProvider *vpn.Mullvad, resource *utils.EndpointMetad
 
 		count++
 
-		for _, ns := range resource.Nameservers {
+		for _, ns := range res.Resource.Nameservers {
 			if err := dnsutils.GetIPsNameserver(&ns); err != nil {
 				log.Printf("Error getting IPs for nameserver: %v\n", err)
 				return
@@ -63,27 +70,27 @@ func processRelaysAndDNS(vpnProvider *vpn.Mullvad, resource *utils.EndpointMetad
 
 			dnsutils.FilterIPv6(&ns.IPs)
 
+			log.Println("nbr ns IPS", ns.IPs)
 			for _, ip := range ns.IPs {
-				if err := vpnProvider.SetCustomDNSResolver(ip.String()); err != nil {
+				if err := res.VPNProvider.SetCustomDNSResolver(ip.String()); err != nil {
 					log.Println("Error setting custom DNS resolver:", err)
 					return
 				}
-
-				dnsutils.ProcessDNSRecords(resource, countryCode, ips, ns, ip, analyzes)
-			}
-
-			if err := vpnProvider.SetDefaultDNSResolver(); err != nil {
-				log.Println("Error setting default DNS resolver:", err)
-				return
+				hosts := dnsutils.ProcessDNSRecords(res, countryCode, ips, ns, ip)
+				a := utils.GetAnalyzesByHosts(res.Analyzes, countryCode, hosts)
+				httputils.RequestSpecificEndpoints(res, a)
+				httputils.TakeScreenshotByCountryCode(res, a)
 			}
 		}
 	}
-	*analyzes = utils.RemoveAnalyzeDuplicates(*analyzes)
-	httputils.RequestEndpoints(resource, analyzes)
+	if err := res.VPNProvider.SetDefaultDNSResolver(); err != nil {
+		log.Println("Error setting default DNS resolver:", err)
+	}
+	//res.Analyzes = utils.RemoveAnalyzeDuplicates(res.Analyzes)
 }
 
 func run() {
-	resource, analyzes, err := initializeResources()
+	res, err := initializeResources()
 	if err != nil {
 		log.Printf("Initialization error: %v\n", err)
 		return
@@ -95,9 +102,9 @@ func run() {
 		return
 	}
 
-	processRelaysAndDNS(&vpnProvider, &resource, &analyzes)
-	utils.CompareHash(analyzes)
-	pkg.SortResult(analyzes)
+	processRelaysAndDNS(res)
+	utils.CompareHash(res.Analyzes)
+	pkg.SortResult(res.Analyzes)
 }
 
 func connectToVPN(vpnProvider *vpn.Mullvad) error {
