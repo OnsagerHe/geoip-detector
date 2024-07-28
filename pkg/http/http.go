@@ -76,13 +76,43 @@ func TakeScreenshotByCountryCode(res *utils.GeoIP, analyzes []*utils.Analyze) {
 	}
 }
 
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	log.Println("browser not found", path)
+	return !os.IsNotExist(err)
+}
+
+func setBrowserBinaryPath() string {
+	const bravePath = "/usr/bin/brave"
+	const chromePath = "/usr/bin/chrome"
+	// TODO: add another browser
+	// firefox does not work with chromedp https://github.com/chromedp/chromedp/issues/837
+
+	if utils.BrowserPath != nil && *utils.BrowserPath != "" {
+		if fileExists(*utils.BrowserPath) {
+			return *utils.BrowserPath
+		}
+	}
+
+	switch {
+	case fileExists(bravePath):
+		return bravePath
+	case fileExists(chromePath):
+		return chromePath
+	default:
+		return ""
+	}
+}
+
 // TakeScreenshot captures a screenshot of the given URL and saves it to the specified folder.
 func takeScreenshot(resource *utils.EndpointMetadata, analyze *utils.Analyze) error {
-	bravePath := "/usr/bin/brave"
+	*utils.BrowserPath = setBrowserBinaryPath()
+	if *utils.BrowserPath == "" {
+		return fmt.Errorf("browser path unknown")
+	}
 
-	log.Println("value", analyze.Nameserver.IPs[0].String())
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath(bravePath),
+		chromedp.ExecPath(*utils.BrowserPath),
 		chromedp.Flag("headless", true),
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("new-instance", true),
@@ -98,13 +128,14 @@ func takeScreenshot(resource *utils.EndpointMetadata, analyze *utils.Analyze) er
 		return fmt.Errorf("failed to capture screenshot: %w", err)
 	}
 
-	if err := os.MkdirAll("downloads", os.ModePerm); err != nil {
+	if err := os.MkdirAll(*utils.FolderPath, os.ModePerm); err != nil {
 		return fmt.Errorf("failed to create folder: %w", err)
 	}
 
+	// TODO: maybe add encoded information to avoid filename to long
 	fileName := fmt.Sprintf("%s_%s_%x.%s", resource.Host, analyze.CountryCode, analyze.Hash, "png")
 	analyze.Filename = fileName
-	filePath := filepath.Join("downloads", fileName)
+	filePath := filepath.Join(*utils.FolderPath, fileName)
 	if err := os.WriteFile(filePath, buf, 0644); err != nil {
 		return fmt.Errorf("failed to save screenshot: %w", err)
 	}
@@ -170,7 +201,6 @@ func RequestEndpoint(resource *utils.EndpointMetadata, analyze *utils.Analyze) {
 
 		analyze.Hash = utils.HashByte(body)
 		analyze.Online = true
-		log.Println("Value append", analyze.Online, analyze.Hash)
 	} else {
 		analyze.Online = false
 	}

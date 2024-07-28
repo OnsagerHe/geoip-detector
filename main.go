@@ -20,6 +20,8 @@ var loop *uint
 func init() {
 	endpoint = flag.String("endpoint", "http://onsager.net", "endpoint to test")
 	loop = flag.Uint("loop", 3, "number of localizations you wish to use")
+	utils.FolderPath = flag.String("folder", "downloads", "path folder for images webpage")
+	utils.BrowserPath = flag.String("browser", "", "path to binary browser")
 	flag.Parse()
 }
 

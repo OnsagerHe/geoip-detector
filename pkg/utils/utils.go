@@ -11,6 +11,9 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+var FolderPath *string
+var BrowserPath *string
+
 type GeoIP struct {
 	Resource    EndpointMetadata
 	Analyzes    []Analyze
