@@ -1,6 +1,7 @@
 # geoip-detector
 
-GeoIP Detector is a tool for detecting geographical information of IP addresses.
+GeoIP Detector is a tool for obtaining a range of information about an http endpoint.
+It provides HTTP status, page hash, screenshot, server ip for different regions of the world provided by your VPN.
 
 ## Requirements
 
