@@ -150,7 +150,6 @@ func (m Mullvad) CheckVPNStatus(expectedCountryCode string) ([]string, error) {
 		case <-tick:
 			res, ips, err := getMullvadCountryCode(expectedCountryCode)
 			if err != nil {
-				//log.Printf("Error getting Mullvad status: %v\n", err)
 				continue
 			}
 
@@ -164,7 +163,7 @@ func (m Mullvad) CheckVPNStatus(expectedCountryCode string) ([]string, error) {
 }
 
 func getMullvadCountryCode(expectedCountryCode string) (bool, []string, error) {
-	cmd := exec.Command("mullvad", "status")
+	cmd := exec.Command("mullvad", "status", "--debug")
 	var out bytes.Buffer
 	cmd.Stdout = &out
 	err := cmd.Run()
@@ -181,34 +180,43 @@ func getMullvadCountryCode(expectedCountryCode string) (bool, []string, error) {
 	return res, ips, nil
 }
 
-func printRelayIdentifierIfContains(input, countryCode string) (bool, []string) {
-	if strings.Contains(input, fmt.Sprintf("Connected to %s-", countryCode)) {
-		ipv4Regex := regexp.MustCompile(`IPv4:\s*([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)`)
-		ipv6Regex := regexp.MustCompile(`IPv6:\s*([a-fA-F0-9:]+)`)
+func extractHostname(output string) (string, error) {
+	hostnameRegex := regexp.MustCompile(`hostname: Some\(\s*"([^"]+)"\s*`)
 
-		ipv4Match := ipv4Regex.FindStringSubmatch(input)
-		ipv6Match := ipv6Regex.FindStringSubmatch(input)
-
-		var ipAddresses []string
-		if len(ipv4Match) > 1 {
-			ipAddresses = append(ipAddresses, ipv4Match[1])
-		}
-		if len(ipv6Match) > 1 {
-			ipAddresses = append(ipAddresses, ipv6Match[1])
-		}
-
-		start := strings.Index(input, "Connected to ") + len("Connected to ")
-		end := strings.Index(input[start:], " ")
-		if end != -1 && ipAddresses != nil {
-			log.Println(input[start : start+end])
-			return true, ipAddresses
-		} else {
-			log.Println(input[start : start+end])
-			log.Println("Relay identifier not found")
-			return true, ipAddresses // FIXME: parse mullvad status debug instead
-		}
-	} else {
-		log.Printf("The input string does not contain the country code: %s\n", countryCode)
+	matches := hostnameRegex.FindStringSubmatch(output)
+	if len(matches) < 2 {
+		return "", fmt.Errorf("hostname not found")
 	}
-	return false, nil
+
+	return matches[1], nil
+}
+
+func extractIPv4(output string) (string, error) {
+	ipv4Regex := regexp.MustCompile(`([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)`)
+
+	matches := ipv4Regex.FindStringSubmatch(output)
+	if len(matches) < 2 {
+		return "", fmt.Errorf("IPv4 address not found")
+	}
+
+	return matches[1], nil
+}
+
+func printRelayIdentifierIfContains(input, countryCode string) (bool, []string) {
+	var ipAddresses []string
+	hostname, err := extractHostname(input)
+	if err != nil || !strings.Contains(hostname, fmt.Sprintf("%s", countryCode)) {
+		log.Println("error hostname", hostname, countryCode)
+		return false, nil
+	}
+
+	ipv4, err := extractIPv4(input)
+	if err != nil {
+		log.Println("error ipv4")
+		return false, nil
+	}
+
+	ipAddresses = append(ipAddresses, ipv4)
+
+	return true, ipAddresses
 }
