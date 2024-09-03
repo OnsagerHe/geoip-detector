@@ -175,6 +175,15 @@ func RequestSpecificEndpoints(res *utils.GeoIP, analyzes []*utils.Analyze) {
 	}
 }
 
+// TODO: store content in remote storage
+func downloadContent(body []byte, path string) error {
+	err := os.WriteFile(path, body, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func RequestEndpoint(resource *utils.EndpointMetadata, analyze *utils.Analyze) {
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -204,6 +213,21 @@ func RequestEndpoint(resource *utils.EndpointMetadata, analyze *utils.Analyze) {
 
 		analyze.Hash = utils.HashByte(body)
 		analyze.Online = true
+
+		if *utils.Source {
+			if err := os.MkdirAll(*utils.FolderPath, os.ModePerm); err != nil {
+				log.Printf("failed to create folder: %w", err)
+			}
+
+			// TODO: maybe add encoded information to avoid filename to long
+			fileName := fmt.Sprintf("%s_%s_%x.%s", resource.Host, analyze.CountryCode, analyze.Hash, "html")
+			analyze.Filename = fileName
+			filePath := filepath.Join(*utils.FolderPath, fileName)
+			err = downloadContent(body, filePath)
+			if err != nil {
+				log.Printf("Error download body: %v\n", err)
+			}
+		}
 	} else {
 		analyze.Online = false
 	}

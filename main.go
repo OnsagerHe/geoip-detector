@@ -20,6 +20,8 @@ var loop *uint
 func init() {
 	endpoint = flag.String("endpoint", "http://onsager.net", "endpoint to test")
 	loop = flag.Uint("loop", 3, "number of localizations you wish to use")
+	utils.Source = flag.Bool("source", false, "download source code endpoint")
+	utils.Screenshot = flag.Bool("screenshot", true, "get screenshot endpoint")
 	utils.FolderPath = flag.String("folder", "downloads", "path folder for images webpage")
 	utils.BrowserPath = flag.String("browser", "", "path to binary browser")
 	flag.Parse()
@@ -68,7 +70,8 @@ func processRelaysAndDNS(res *utils.GeoIP) {
 
 			dnsutils.FilterIPv6(&ns.IPs)
 
-			log.Println("nbr ns IPS", ns.IPs)
+			// TODO: add debug print with level log
+			//log.Println("nbr ns IPS", ns.IPs)
 			for _, ip := range ns.IPs {
 				if err := res.VPNProvider.SetCustomDNSResolver(ip.String()); err != nil {
 					log.Println("Error setting custom DNS resolver:", err)
@@ -77,7 +80,9 @@ func processRelaysAndDNS(res *utils.GeoIP) {
 				hosts := dnsutils.ProcessDNSRecords(res, countryCode, ips, ns, ip)
 				a := utils.GetAnalyzesByHosts(res.Analyzes, countryCode, hosts)
 				httputils.RequestSpecificEndpoints(res, a)
-				httputils.TakeScreenshotByCountryCode(res, a)
+				if *utils.Screenshot {
+					httputils.TakeScreenshotByCountryCode(res, a)
+				}
 			}
 		}
 	}

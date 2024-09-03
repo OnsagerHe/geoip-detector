@@ -13,6 +13,8 @@ import (
 
 var FolderPath *string
 var BrowserPath *string
+var Screenshot *bool
+var Source *bool
 
 type GeoIP struct {
 	Resource    EndpointMetadata
