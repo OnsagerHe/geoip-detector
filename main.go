@@ -51,10 +51,6 @@ func processRelaysAndDNS(res *utils.GeoIP) {
 		if count >= *loop {
 			break
 		}
-		// TODO: remove debug condition
-		if count == 0 {
-			countryCode = "al"
-		}
 
 		ips, err := res.VPNProvider.SetLocationVPN(countryCode)
 		if err != nil {
@@ -67,7 +63,7 @@ func processRelaysAndDNS(res *utils.GeoIP) {
 		for _, ns := range res.Resource.Nameservers {
 			if err := dnsutils.GetIPsNameserver(&ns); err != nil {
 				log.Printf("Error getting IPs for nameserver: %v\n", err)
-				return
+				continue
 			}
 
 			dnsutils.FilterIPv6(&ns.IPs)
@@ -76,7 +72,7 @@ func processRelaysAndDNS(res *utils.GeoIP) {
 			for _, ip := range ns.IPs {
 				if err := res.VPNProvider.SetCustomDNSResolver(ip.String()); err != nil {
 					log.Println("Error setting custom DNS resolver:", err)
-					return
+					continue
 				}
 				hosts := dnsutils.ProcessDNSRecords(res, countryCode, ips, ns, ip)
 				a := utils.GetAnalyzesByHosts(res.Analyzes, countryCode, hosts)
@@ -107,6 +103,9 @@ func run() {
 	processRelaysAndDNS(res)
 	utils.CompareHash(res.Analyzes)
 	pkg.SortResult(res.Analyzes)
+	if err := res.VPNProvider.SetDefaultDNSResolver(); err != nil {
+		log.Println("Error setting default DNS resolver:", err)
+	}
 }
 
 func connectToVPN(vpnProvider *vpn.Mullvad) error {

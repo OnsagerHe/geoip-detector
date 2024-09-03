@@ -112,7 +112,15 @@ func (m Mullvad) SetLocationVPN(countryCode string) ([]string, error) {
 		log.Println("Error:", err)
 		return nil, err
 	}
-	log.Println("Connected to the correct country code.")
+
+	// TODO: maybe update time seconds
+	time.Sleep(3 * time.Second)
+	fmt.Print("Connection to the correct country code")
+	for i := 0; i < 3; i++ {
+		fmt.Print(".")
+		time.Sleep(1 * time.Second)
+	}
+	fmt.Println("")
 
 	return ips, err
 }

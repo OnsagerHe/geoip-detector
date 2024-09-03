@@ -78,7 +78,9 @@ func TakeScreenshotByCountryCode(res *utils.GeoIP, analyzes []*utils.Analyze) {
 
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
-	log.Println("browser not found", path)
+	if err != nil {
+		log.Println("browser not found", path)
+	}
 	return !os.IsNotExist(err)
 }
 
@@ -147,6 +149,7 @@ func takeScreenshot(resource *utils.EndpointMetadata, analyze *utils.Analyze) er
 func fullScreenshot(urlstr string, res *[]byte) chromedp.Tasks {
 	return chromedp.Tasks{
 		chromedp.Navigate(urlstr),
+		chromedp.WaitVisible(`body`, chromedp.ByQuery),
 		chromedp.FullScreenshot(res, 100),
 	}
 }
