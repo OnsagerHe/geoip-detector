@@ -4,18 +4,20 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/OnsagerHe/geoip-detector/pkg"
 	"log"
 	"time"
 
-	dnsutils "github.com/OnsagerHe/geoip-detector/pkg/dns"
-	httputils "github.com/OnsagerHe/geoip-detector/pkg/http"
+	"github.com/OnsagerHe/geoip-detector/internal/api"
+
+	"github.com/OnsagerHe/geoip-detector/pkg/retriever"
 	"github.com/OnsagerHe/geoip-detector/pkg/utils"
+	"github.com/OnsagerHe/geoip-detector/pkg/utils/logger"
 	"github.com/OnsagerHe/geoip-detector/pkg/vpn"
 )
 
 var endpoint *string
 var loop *uint
+var server *bool
 
 func init() {
 	endpoint = flag.String("endpoint", "http://onsager.net", "endpoint to test")
@@ -24,93 +26,46 @@ func init() {
 	utils.Screenshot = flag.Bool("screenshot", true, "get screenshot endpoint")
 	utils.FolderPath = flag.String("folder", "downloads", "path folder for images webpage")
 	utils.BrowserPath = flag.String("browser", "", "path to binary browser")
+	utils.Prd = flag.Bool("prod", true, "don't print debug log") // set var env\
+	server = flag.Bool("server", true, "run api server")
 	flag.Parse()
 }
 
-func initializeResources() (*utils.GeoIP, error) {
-	res := utils.GeoIP{
+func initGeoIP() *utils.GeoIP {
+	res := &utils.GeoIP{
 		Resource:    utils.EndpointMetadata{Endpoint: *endpoint},
 		Analyzes:    nil,
 		VPNProvider: vpn.Mullvad{},
+		Logger:      logger.CreateLogger(*utils.Prd),
 	}
 
-	if err := httputils.InitHTTPInformation(&res.Resource); err != nil {
-		return nil, err
-	}
-
-	if err := dnsutils.InitNameserversInformation(&res.Resource); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-func processRelaysAndDNS(res *utils.GeoIP) {
-	relays := res.VPNProvider.ListVPN()
-	count := uint(0)
-
-	for countryCode := range relays {
-		if count >= *loop {
-			break
-		}
-
-		ips, err := res.VPNProvider.SetLocationVPN(countryCode)
-		if err != nil {
-			log.Printf("Error setting location VPN: %v\n", err)
-			return
-		}
-
-		count++
-
-		for _, ns := range res.Resource.Nameservers {
-			if err := dnsutils.GetIPsNameserver(&ns); err != nil {
-				log.Printf("Error getting IPs for nameserver: %v\n", err)
-				continue
-			}
-
-			dnsutils.FilterIPv6(&ns.IPs)
-
-			// TODO: add debug print with level log
-			//log.Println("nbr ns IPS", ns.IPs)
-			for _, ip := range ns.IPs {
-				if err := res.VPNProvider.SetCustomDNSResolver(ip.String()); err != nil {
-					log.Println("Error setting custom DNS resolver:", err)
-					continue
-				}
-				hosts := dnsutils.ProcessDNSRecords(res, countryCode, ips, ns, ip)
-				a := utils.GetAnalyzesByHosts(res.Analyzes, countryCode, hosts)
-				httputils.RequestSpecificEndpoints(res, a)
-				if *utils.Screenshot {
-					httputils.TakeScreenshotByCountryCode(res, a)
-				}
-			}
-		}
-	}
-	if err := res.VPNProvider.SetDefaultDNSResolver(); err != nil {
-		log.Println("Error setting default DNS resolver:", err)
-	}
-	//res.Analyzes = utils.RemoveAnalyzeDuplicates(res.Analyzes)
+	return res
 }
 
 func run() {
-	res, err := initializeResources()
-	if err != nil {
-		log.Printf("Initialization error: %v\n", err)
-		return
-	}
-
+	res := initGeoIP()
 	vpnProvider := vpn.Mullvad{}
 	if err := connectToVPN(&vpnProvider); err != nil {
 		log.Printf("VPN connection error: %v\n", err)
 		return
 	}
 
-	processRelaysAndDNS(res)
-	utils.CompareHash(res.Analyzes)
-	pkg.SortResult(res.Analyzes)
-	if err := res.VPNProvider.SetDefaultDNSResolver(); err != nil {
-		log.Println("Error setting default DNS resolver:", err)
+	rtr := retriever.Init(res, uint8(*loop))
+
+	if *server {
+		frontend := api.InitServer(rtr)
+		if err := api.LaunchServer(frontend); err != nil {
+			log.Fatal(err)
+		}
+		return
 	}
+
+	rtr.Process.Logger.Debug("value for endpoint and loop:" + *endpoint)
+	err := rtr.CheckEndpoint()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 func connectToVPN(vpnProvider *vpn.Mullvad) error {
