@@ -53,6 +53,9 @@ func processRelaysAndDNS(res *utils.GeoIP) {
 		if count >= *loop {
 			break
 		}
+		if countryCode == "al" {
+			continue
+		}
 
 		ips, err := res.VPNProvider.SetLocationVPN(countryCode)
 		if err != nil {
