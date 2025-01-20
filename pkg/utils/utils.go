@@ -3,11 +3,13 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"github.com/OnsagerHe/geoip-detector/pkg/vpn"
 	"log"
 	"net"
 	"strings"
 
+	"github.com/OnsagerHe/geoip-detector/pkg/vpn"
+
+	"go.uber.org/zap"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -15,11 +17,13 @@ var FolderPath *string
 var BrowserPath *string
 var Screenshot *bool
 var Source *bool
+var Prd *bool
 
 type GeoIP struct {
 	Resource    EndpointMetadata
 	Analyzes    []Analyze
 	VPNProvider vpn.IProviderVPN
+	Logger      *zap.Logger
 }
 
 type Nameserver struct {

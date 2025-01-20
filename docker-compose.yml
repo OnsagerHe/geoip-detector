@@ -1,0 +1,42 @@
+services:
+    mullvad:
+        image: fluse1367/mullvad-proxy
+        restart: unless-stopped
+        networks:
+            - localnet
+        hostname: 'mullvad'
+        ports:
+            - "${SOCKS5_BIND}:1080"
+            - "${HTTP_BIND}:8888"
+        cap_add:
+            - 'NET_ADMIN'
+            - 'SYS_MODULE'
+        sysctls:
+            net.ipv4.conf.all.src_valid_mark: 1
+        privileged: true
+        environment:
+            - "ACCOUNT_NUMBER=${ACCOUNT_NUMBER}"
+        volumes:
+            - 'mullvad-conf:/conf'
+
+    geoip-detector:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: geoip-detector
+        depends_on:
+            - mullvad
+        network_mode: service:mullvad
+#        restart: unless-stopped
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ./backup-downloads:/app/downloads
+        environment:
+            - DOCKER_HOST=unix:///var/run/docker.sock
+
+networks:
+    localnet:
+        driver: bridge
+
+volumes:
+    mullvad-conf:

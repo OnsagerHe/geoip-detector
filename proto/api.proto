@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package geoip_detector.api;
+
+option go_package = "github.com/OnsagerHe/geoip_detector/proto";
+
+import public "google/protobuf/empty.proto";
+import public "validate/validate.proto";
+
+
+service Api {
+        rpc PutEndpoint(PutEndpointRequest) returns (PutEndpointResponse) {}
+}
+
+message PutEndpointRequest {
+        string endpoint = 1;
+        int32 loop = 2;
+}
+
+message MetadataEndpoint {
+        string endpoint = 1;
+        string status = 2;
+        string = hash_file = 3;
+        string filename = 4;
+}
+
+message PutEndpointResponse {
+        repeated MetadataEndpoint metadata = 1;
+}

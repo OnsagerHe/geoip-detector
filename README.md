@@ -40,3 +40,35 @@ After building the project, you can run the GeoIP Detector with the following co
 ---
 
 **Note:** Remember to replace `XXXX-XXXX-XXXX-XXXX` with your actual Mullvad VPN account token.
+
+## Architecture
+
+### Sequence Diagram
+
+```mermaid
+graph TD
+    A[API Server] --> B[Queue]
+    B --> C[Task Dispatcher]
+    C --> D[Protocol Adapter]
+    D --> D1[HTTP Collector]
+    D --> D2[DNS Collector]
+    D --> D3[SMTP Collector]
+    D1 --> E1[ WebScraper]
+    E1 --> F1[HTML Parser]
+    D2 --> F2[DNS Response Parser]
+    D3 --> F3[Email Header Parser]
+
+    F1 -->G[DataNormalizer]
+    F2 -->G
+    F3 -->G
+
+    G --> H[Data Enricher]
+    H --> I[Storage Writer]
+    I --> J[Storage]
+
+    subgraph Storage Layer
+        J --> K[Storage Reader]
+    end
+
+    K --> L[Requestor Interface]
+```
